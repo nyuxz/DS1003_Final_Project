@@ -60,8 +60,6 @@ def prepare_train_test_set(datapath, label="price", test_ratio=0.2):
     return [x_cv, x_test, y_cv, y_test]
 
 def quick_test_model(x_train, x_test, y_train, y_test, model, eval_metrics):
-    #all_labels = np.unique(np.concatenate([y_train, y_test]))
-    model.fit(x_train, y_train)
     pred_train = model.predict(x_train)
     pred_test = model.predict(x_test)
     train_loss = eval_metrics(y_train, pred_train)
