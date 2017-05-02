@@ -32,7 +32,7 @@ def run_model(read_data_datapath, save_model_path):
 		'reg_lambda': [0.1, 0.5, 1.0] # L2 regularization term on weights
 
 	}
-	CV_clf = GridSearchCV(estimator=clf, param_grid=param_grid, cv=2)
+	CV_clf = GridSearchCV(estimator=clf, param_grid=param_grid, cv=2， scoring='neg_mean_squared_error')
 
 	#CV_clf.fit(x_train[1:100,:], y_train[1:100])
 	CV_clf.fit(x_train, y_train)
