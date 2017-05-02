@@ -49,7 +49,8 @@ def prepare_train_test_set(datapath, label="price", test_ratio=0.2):
             imp_record[col[i]] = imp[i]
             keep.append(col[i])
     sorted_imp = sorted(imp_record.items(), key=operator.itemgetter(1))
-    print(sorted_imp)
+    print (len(sorted_imp))
+    # print(sorted_imp)
     
     # transform to matrix
     x_cv = x_cv[keep].as_matrix()
