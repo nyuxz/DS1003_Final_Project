@@ -22,8 +22,8 @@ def read_data(file_path):
     # only keep selected variables (32 features)
     df = df[binary_cols +  cat_cols + text_cols + num_cols + mix_cols + Y]
 
-    # drop obs with larger than 8 features missing (25%)
-    df = df[df.isnull().sum(axis=1) < 9]
+    # drop obs with larger than 9 features missing (26%)
+    df = df[df.isnull().sum(axis=1) < 10]
     return df
 
 # print topic top words for text features
@@ -96,14 +96,16 @@ if __name__ == '__main__':
     #sys.path.append('/Users/Sean/Desktop/DS1003_Final_Project')
 
 ### select meaningful features
-    binary_cols = ['host_is_superhost', 'instant_bookable']
+    binary_cols = ['host_is_superhost', 'host_identity_verified', 'is_location_exact',
+                   'instant_bookable', 'require_guest_profile_picture',
+                   'require_guest_phone_verification']
     cat_cols = ['host_response_time', 'zipcode', 'property_type', 'room_type',
                 'bed_type', 'cancellation_policy']
     text_cols = ['name', 'summary', 'space', 'description', 'neighborhood_overview',
                  'transit', 'access', 'interaction', 'house_rules', 'host_about']
-    num_cols = ['host_response_rate', 'host_listings_count', 'extra_people',
-                'accommodates', 'bathrooms', 'bedrooms', 'beds', 'guests_included',
-                'minimum_nights', 'maximum_nights', 'calculated_host_listings_count', 'longitude', 'latitude']
+    num_cols = ['host_response_rate', 'host_listings_count', 'accommodates', 
+                'bathrooms', 'bedrooms', 'beds', 'guests_included',
+                'minimum_nights', 'maximum_nights', 'calculated_host_listings_count']
     mix_cols = ['host_verifications', 'amenities']
     Y = ['price']
 
@@ -113,13 +115,16 @@ if __name__ == '__main__':
 
     ### missing imputation
 
-    # text imputation feature: transit, summary, access, house_rules, host_about, interaction, neighborhood_overview, description, space
+    # text imputation feature: transit, summary, access, house_rules, host_about, 
+    #                          interaction, neighborhood_overview, description, space
     mi.text_imputation(clean_data, text_cols)
 
     # mode imputation feature: 'host_is_superhost', 'instant_bookable'
     mi.mode_imputation(clean_data, binary_cols)
 
-    # knn imputation feature: 'host_is_superhost', 'host_response_time', 'zipcode', 'host_response_rate', 'host_listings_count', 'bathrooms', 'bedrooms', 'beds'
+    # knn imputation feature: 'host_is_superhost', 'host_response_time', 'zipcode', 
+    #                         'host_response_rate', 'host_listings_count', 
+    #                         'bathrooms', 'bedrooms', 'beds'
     clean_data = mi.knn_imputation(clean_data, 'zipcode', 3, cat_cols, num_cols)
     clean_data = mi.knn_imputation(clean_data, 'host_response_time', 3, cat_cols, num_cols)
     clean_data = mi.knn_imputation(clean_data, 'host_response_rate', 3, cat_cols, num_cols)
@@ -184,9 +189,3 @@ if __name__ == '__main__':
 
     out1.close()
     out2.close()
-
-
-
-
-
-
