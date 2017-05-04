@@ -1,4 +1,3 @@
-#to do: missing indicator, mvp
 from sklearn import preprocessing
 from scipy import stats
 import numpy as np
@@ -19,25 +18,26 @@ def log_skewness(data, num_cols, Y):
 
     return data
 
-
-# detect outliers of target price and delete outliers
-# outliers are price which outside 2 standard deviations(or 1.96) # 2.575
-def del_outliers(data, Y='price'):
-
-    outliers = []
-    data_array = np.array(data[Y])
+# delete outliers of target variable, outside 2 SD
+def del_outliers(df, Y='price'):
+    big_out = []
+    small_out = []
+    data_array = np.array(df[Y])
     mean = np.mean(data_array)
     std = np.std(data_array)
 
     for i in range(0, len(data_array)):
-        if abs(data_array[i] - mean) > 1.96 * std:
-            outliers.append(data_array[i])
-    thred = sorted(outliers)[0]
-    data[Y][data[Y] > thred] = np.nan
-    data = data.dropna()
+        if data_array[i] - mean > 1.96 * std:
+            big_out.append(data_array[i])
+        if data_array[i] - mean < -1.96 * std:
+            small_out.append(data_array[i])
+    big_thred = sorted(big_out)[0]
+    small_thred = sorted(small_out)[-1]
 
-    return data
+    df = df[df[Y] < big_thred]
+    df = df[df[Y] > small_thred]
 
+    return df
 
 # standardization
 def standardize_matrix(matrix):
@@ -49,7 +49,6 @@ def standardize_matrix(matrix):
 
     return matrix
 
-
 def standardize_df(data):
 
     for col in data.columns.tolist():
@@ -59,7 +58,6 @@ def standardize_df(data):
             data[col] = data[col].apply(lambda x: (x - mean) / std)
 
     return data
-
 
 # normalization
 def normalize_df(data):
@@ -71,13 +69,10 @@ def normalize_df(data):
 
     return data
 
-
-# create feature: distance to subway
-
-
+# feature engineering
 def prepare_subway_data():
     '''
-    data source: https://data.ny.gov/Transportation/NYC-Transit-Subway-Entrance-And-Exit-Data/i9wp-a4ja
+    Source: https://data.ny.gov/Transportation/NYC-Transit-Subway-Entrance-And-Exit-Data/i9wp-a4ja
     '''
     # read external subway dataset
     subway = pd.read_csv('./data/subway.csv')
@@ -89,10 +84,9 @@ def prepare_subway_data():
 
     return (subway)
 
-
 def prepare_park_data():
     '''
-    data source: https://data.cityofnewyork.us/Recreation/NYC-Parks-Public-Events-Upcoming-14-Days/w3wp-dpdi
+    Source: https://data.cityofnewyork.us/Recreation/NYC-Parks-Public-Events-Upcoming-14-Days/w3wp-dpdi
     '''
     # read external park dataset
     park = pd.read_json('./data/park.json')
@@ -104,17 +98,14 @@ def prepare_park_data():
     park = park.drop_duplicates()
     park = park.replace(r'', np.nan, regex=True)
     park = park.dropna()
+    park = park[park['coordinates'].str.len()<=43]
     park['latitude'], park['longitude'] = park['coordinates'].str.split(', ', 1).str
     park = park.drop('coordinates', 1)
-    # park[park['longitude'].str.contains(";")] # row 77, 121, 123 are anomalous
-    park.drop(park.index[[77, 121, 123]], inplace=True)
     park = park.reset_index(drop=True)
     park['latitude'] = park['latitude'].astype('float64')
     park['longitude'] = park['longitude'].astype('float64')
 
     return (park)
-
-
 
 def create_new_feature(data):
     '''
@@ -147,7 +138,7 @@ def create_new_feature(data):
         lon1 = data['longitude'][i]
         min_dist12 = 1600
         min_dist13 = 1600
-        print (i)
+        #print (i)
         for j in range(subway.shape[0]):
             # subway location
             lat2 = subway['Station Latitude'][j]
@@ -157,10 +148,10 @@ def create_new_feature(data):
             dist12 = gpxpy.geo.haversine_distance(lat1, lon1, lat2, lon2)
 
             if dist12 <= dist_to_subway:
-                data['count_near_subway'][i] += 1
+                data.loc[i, 'count_near_subway'] += 1
 
             if dist12 < min_dist12:
-                data['dist_to_nearest_subway'][i] = dist12
+                data.loc[i, 'dist_to_nearest_subway'] = dist12
                 min_dist12 = dist12
 
             try:
@@ -168,20 +159,18 @@ def create_new_feature(data):
                 lon3 = park['longitude'][j]
                 dist13 = gpxpy.geo.haversine_distance(lat1, lon1, lat3, lon3)
                 if dist13 <= dist_to_park:
-                    data['count_near_park'][i] += 1
+                    data.loc[i, 'count_near_park'] += 1
 
                 if dist13 < min_dist13:
-                    data['dist_to_nearest_park'][i] = dist13
+                    data.loc[i, 'dist_to_nearest_park'] = dist13
                     min_dist13 = dist13
             except KeyError:
                 continue
 
     return (data)
 
-
 '''
 datapath = './data/encoded_others.pkl'
 pkl_file = open(datapath, 'rb')
 dataset = pickle.load(pkl_file)
 '''
-

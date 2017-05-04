@@ -6,10 +6,10 @@ from sklearn.decomposition import LatentDirichletAllocation
 from textblob import TextBlob
 import missing_imputation as mi
 import feature_engineering as fg
-from importlib import reload
+#from importlib import reload
 #reload(fg)
-import os
-import sys
+#import os
+#import sys
 
 # read the data
 def read_data(file_path):
@@ -19,7 +19,7 @@ def read_data(file_path):
     na_cols = df.columns[pd.isnull(df).sum() / len(df) > 0.5].tolist()
     df.drop(na_cols, inplace=True, axis=1)
 
-    # only keep selected variables (32 features)
+    # only keep selected variables (34 features)
     df = df[binary_cols +  cat_cols + text_cols + num_cols + mix_cols + Y]
 
     # drop obs with larger than 9 features missing (26%)
@@ -95,7 +95,7 @@ if __name__ == '__main__':
     #os.chdir('/Users/Sean/Desktop/DS1003_Final_Project')
     #sys.path.append('/Users/Sean/Desktop/DS1003_Final_Project')
 
-### select meaningful features
+    ### select meaningful features
     binary_cols = ['host_is_superhost', 'host_identity_verified', 'is_location_exact',
                    'instant_bookable', 'require_guest_profile_picture',
                    'require_guest_phone_verification']
@@ -104,36 +104,39 @@ if __name__ == '__main__':
     text_cols = ['name', 'summary', 'space', 'description', 'neighborhood_overview',
                  'transit', 'access', 'interaction', 'house_rules', 'host_about']
     num_cols = ['host_response_rate', 'host_listings_count', 'accommodates', 
-                'bathrooms', 'bedrooms', 'beds', 'guests_included',
+                'bathrooms', 'bedrooms', 'beds', 'guests_included', 'latitude', 'longitude',
                 'minimum_nights', 'maximum_nights', 'calculated_host_listings_count']
     mix_cols = ['host_verifications', 'amenities']
     Y = ['price']
 
     ### read data
     clean_data = read_data('./data/listings_all.csv')
-    #clean_data = clean_data.head(3000)
+    #clean_data = clean_data.iloc[2000:3000]
+    
+    ### transform label
+    # log-transform
+    clean_data = fg.log_skewness(clean_data, num_cols, Y)
+    print("**Skewed features have been transformed**")
+
+    # delete outliers
+    clean_data = fg.del_outliers(clean_data)
+    print("**Outliers have been deleted**")
 
     ### missing imputation
-
-    # text imputation feature: transit, summary, access, house_rules, host_about, 
-    #                          interaction, neighborhood_overview, description, space
+    # empty string imputation: text features
     mi.text_imputation(clean_data, text_cols)
 
-    # mode imputation feature: 'host_is_superhost', 'instant_bookable'
+    # mode imputation： binary features
     mi.mode_imputation(clean_data, binary_cols)
 
-    # knn imputation feature: 'host_is_superhost', 'host_response_time', 'zipcode', 
+    # knn imputation feature: 'host_response_time', 'zipcode', 
     #                         'host_response_rate', 'host_listings_count', 
     #                         'bathrooms', 'bedrooms', 'beds'
     clean_data = mi.knn_imputation(clean_data, 'zipcode', 3, cat_cols, num_cols)
     clean_data = mi.knn_imputation(clean_data, 'host_response_time', 3, cat_cols, num_cols)
+    
     clean_data = mi.knn_imputation(clean_data, 'host_response_rate', 3, cat_cols, num_cols)
     clean_data = mi.knn_imputation(clean_data, 'host_listings_count', 3, cat_cols, num_cols)
-
-    # replace 0 count of bathrooms, bedrooms, beds to np.nan
-    clean_data['bathrooms'].replace(0, np.nan)
-    clean_data['bedrooms'].replace(0, np.nan)
-    clean_data['beds'].replace(0, np.nan)
     clean_data = mi.knn_imputation(clean_data, 'bathrooms', 3, cat_cols, num_cols)
     clean_data = mi.knn_imputation(clean_data, 'bedrooms', 3, cat_cols, num_cols)
     clean_data = mi.knn_imputation(clean_data, 'beds', 3, cat_cols, num_cols)
@@ -143,16 +146,6 @@ if __name__ == '__main__':
         print ("**All missing values have been filled**")
 
     ### feature engineering
-
-    # deal with outliers
-    clean_data = fg.del_outliers(clean_data)
-    print("**Outliers have been deleted**")
-
-    # deal with skewness
-    clean_data = fg.log_skewness(clean_data, num_cols, Y)
-    print("**Skewed features have been transformed**")
-
-    # create new  features
     clean_data = fg.create_new_feature(clean_data)
     print("**New features have been created**")
 
@@ -175,17 +168,15 @@ if __name__ == '__main__':
     encoded_entire = encoded_entire.drop('room_type_Private room', 1)
     encoded_entire = encoded_entire.drop('room_type_Shared room', 1)
 
-    encoded_others = encoded_df[encoded_df['room_type_Entire home/apt'] != 1]
-    encoded_others = encoded_others.drop('room_type_Entire home/apt', 1)
-    encoded_others = encoded_others.drop('room_type_Shared room', 1)
-
+    encoded_private = encoded_df[encoded_df['room_type_Private room'] == 1]
+    encoded_private = encoded_private.drop('room_type_Entire home/apt', 1)
+    encoded_private = encoded_private.drop('room_type_Private room', 1)
+    encoded_private = encoded_private.drop('room_type_Shared room', 1)
 
     ### output the cleaned, encoded dataset for modeling
     out1 = open('./data/encoded_entire.pkl', 'wb')
     pickle.dump(encoded_entire, out1)
-
-    out2 = open('./data/encoded_others.pkl', 'wb')
-    pickle.dump(encoded_others, out2)
-
+    out2 = open('./data/encoded_private.pkl', 'wb')
+    pickle.dump(encoded_private, out2)
     out1.close()
     out2.close()
