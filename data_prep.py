@@ -112,6 +112,7 @@ if __name__ == '__main__':
     ### read data
     clean_data = read_data('./data/listings_all.csv')
     #clean_data = clean_data.iloc[2000:3000]
+    #clean_data = clean_data.head(3000)
     
     ### transform label
     # log-transform
@@ -156,7 +157,7 @@ if __name__ == '__main__':
     # standardize and normalize data
     encoded_df = fg.standardize_df(encoded_df)
     encoded_df = fg.normalize_df(encoded_df)
-    print("**Data has been standardized**")
+    print("**Data has been standardized and normalized**")
 
     # drop longitude and latitude
     encoded_df = encoded_df.drop('longitude', 1)
