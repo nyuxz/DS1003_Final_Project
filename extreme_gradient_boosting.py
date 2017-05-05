@@ -11,12 +11,22 @@ from sklearn.model_selection import GridSearchCV
 import pickle
 import numpy as np 
 
+# importance_threshold = 0.001 achieved best train loss
+def number_best_feature_set(read_data_datapath):
+	min_train_loss = 100
+	threshold = 0
+	for i in np.array([0.001, 0.002, 0.003, 0.004, 0.005, 0.006]):
+		x_train, x_test, y_train, y_test = util.prepare_train_test_set(read_data_datapath, i)
+		clf = xgb.XGBRegressor(seed = 2017)
+		clf.fit(x_train, y_train)
+		train_loss, test_loss = util.quick_test_model(x_train, x_test, y_train, y_test, clf, regression_loss)
+		print (train_loss, i)
 
 
 def run_model(read_data_datapath, save_model_path):
 
 	# read data
-	x_train, x_test, y_train, y_test = util.prepare_train_test_set(read_data_datapath)
+	x_train, x_test, y_train, y_test = util.prepare_train_test_set(read_data_datapath, 0.001)
 
 	# choose model
 	clf = xgb.XGBRegressor(seed = 2017)
@@ -27,12 +37,12 @@ def run_model(read_data_datapath, save_model_path):
 		'gamma': [0.0, 0.2, 0.4], # Minimum loss reduction required to make a further partition on a leaf node of the tree
 		'max_depth': [3, 5, 7, 10], # in place of max_leaf_nodes
 		'min_child_weight': [0.1, 1, 2], # Minimum sum of instance weight(hessian) needed in a child, in the place of min_child_leaf
-		'n_estimators': [1000], # Number of boosted trees to fit
+		'n_estimators': [50, 100, 200, 250, 300], # Number of boosted trees to fit
 		'reg_alpha': [0.1, 0.5, 1.0], # L1 regularization term on weights
 		'reg_lambda': [0.1, 0.5, 1.0] # L2 regularization term on weights
 
 	}
-	CV_clf = GridSearchCV(estimator=clf, param_grid=param_grid, cv=2， scoring='neg_mean_squared_error')
+	CV_clf = GridSearchCV(estimator=clf, param_grid=param_grid, cv=4, scoring='neg_mean_squared_error')
 
 	#CV_clf.fit(x_train[1:100,:], y_train[1:100])
 	CV_clf.fit(x_train, y_train)
@@ -59,9 +69,11 @@ def show_result(read_model_path):
 
 if __name__ == '__main__':
 
-	run_model('./data/encoded_entire.pkl', "./model/xgb_entire_model.pkl")
-	run_model('./data/encoded_others.pkl', "./model/xgb_others_model.pkl")
+	run_model('./data/encoded_entire.pkl', "./model/xgb_entire_model_final.pkl")
+	run_model('./data/encoded_private.pkl', "./model/xgb_private_model_final.pkl")
 
-	show_result("./model/xgb_entire_model.pkl")
-	show_result("./model/xgb_others_model.pkl")
+	show_result("./model/xgb_entire_model_final.pkl")
+	show_result("./model/xgb_private_model_final.pkl")
+
+
 
