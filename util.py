@@ -25,7 +25,7 @@ def dataset_combine(datapath1, datapath2):
         pickle.dump(big_data, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 # divide the dataset to train dataset and test data set
-def prepare_train_test_set(datapath, label="price", test_ratio=0.2):
+def prepare_train_test_set(datapath, importance_threshold, label="price", test_ratio=0.2):
     # read data
     pkl_file = open(datapath, 'rb')
     dataset = pickle.load(pkl_file)
@@ -45,7 +45,7 @@ def prepare_train_test_set(datapath, label="price", test_ratio=0.2):
     keep = []
     imp_record = {}
     for i in range(len(imp)):
-        if imp[i] > 0.001:
+        if imp[i] > importance_threshold:
             imp_record[col[i]] = imp[i]
             keep.append(col[i])
     sorted_imp = sorted(imp_record.items(), key=operator.itemgetter(1))
