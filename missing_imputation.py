@@ -4,10 +4,8 @@ from sklearn.neighbors import KNeighborsRegressor as KNNr
 from sklearn.neighbors import KNeighborsClassifier as KNNc
 from sklearn import preprocessing
 
-
-
 import os
-os.chdir('/Users/Sean/Desktop/DS1003_Final_Project')
+#os.chdir('/Users/Sean/Desktop/DS1003_Final_Project')
 
 def mean_imputation(df, num_cols):
     for col in num_cols:
@@ -39,10 +37,10 @@ def knn_imputation(data, column_name, k, cat_cols, num_cols):
     mydata = data[cat_cols + num_cols]
 
     if column_name in cat_cols:
-        cat_cols_new = cat_cols.copy()
+        cat_cols_new = cat_cols[:]
         cat_cols_new.remove(column_name)
     else:
-        num_cols_new = num_cols.copy()
+        num_cols_new = num_cols[:]
         num_cols_new.remove(column_name)
 
     # save target with missing value
@@ -85,7 +83,7 @@ def knn_imputation(data, column_name, k, cat_cols, num_cols):
     knn.fit(X_filled, y_filled)
 
     # using knn to predict missing value
-    df_missing[column_name] = knn.predict(X_missing)
+    df_missing.loc[:,column_name] = knn.predict(X_missing)
 
     # replace prediction to nan at missing target column
     df_final = data.copy()
