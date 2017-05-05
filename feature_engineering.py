@@ -107,6 +107,18 @@ def prepare_park_data():
 
     return (park)
 
+
+def prepare_attraction_data():
+    '''
+    Source: google the coordinate for each famous attraction site in NYC
+    '''
+    attraction = pd.read_csv('./data/attraction.csv')
+    attraction['latitude'] = attraction['latitude'].astype('float64')
+    attraction['longitude'] = attraction['longitude'].astype('float64')
+
+    return (attraction)
+
+
 def create_new_feature(data):
     '''
     subway feature created: count_near_subway, dist_to_nearest_subway
@@ -115,6 +127,7 @@ def create_new_feature(data):
 
     park = prepare_park_data()
     subway = prepare_subway_data()
+    attraction = prepare_attraction_data()
 
     data = data.reset_index(drop=True)
 
@@ -128,6 +141,11 @@ def create_new_feature(data):
     data['dist_to_nearest_park'] = np.zeros(len(data))
     data['dist_to_nearest_park'] = 1600
 
+    # create one attraction feature
+    data['dist_to_famous_attraction'] = np.zeros(len(data))
+    data['dist_to_famous_attraction'] = 32000
+
+
     # set up threshold, point to point distance, unit: meters (i.e. 0.25 miles)
     dist_to_subway = 400
     dist_to_park = 800
@@ -138,6 +156,7 @@ def create_new_feature(data):
         lon1 = data['longitude'][i]
         min_dist12 = 1600
         min_dist13 = 1600
+        min_dist14 = 32000
         #print (i)
         for j in range(subway.shape[0]):
             # subway location
@@ -155,6 +174,7 @@ def create_new_feature(data):
                 min_dist12 = dist12
 
             try:
+                # park location
                 lat3 = park['latitude'][j]
                 lon3 = park['longitude'][j]
                 dist13 = gpxpy.geo.haversine_distance(lat1, lon1, lat3, lon3)
@@ -167,10 +187,22 @@ def create_new_feature(data):
             except KeyError:
                 continue
 
+            try:
+                # attraction location
+                lat4 = attraction['latitude'][j]
+                lon4 = attraction['longitude'][j]
+                dist14 = gpxpy.geo.haversine_distance(lat1, lon1, lat4, lon4)
+                if dist14 < min_dist14:
+                    data.loc[i, 'dist_to_famous_attraction'] = dist14
+                    min_dist14 = dist14
+            except KeyError:
+                continue
+
+
     return (data)
 
 '''
-datapath = './data/encoded_others.pkl'
+datapath = './data/encoded_entire.pkl'
 pkl_file = open(datapath, 'rb')
 dataset = pickle.load(pkl_file)
 '''
