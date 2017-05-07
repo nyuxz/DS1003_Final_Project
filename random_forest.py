@@ -4,17 +4,8 @@ Created on Thu Apr 27 15:52:09 2017
 
 @author: siyang
 """
-
 import sys
 import os
-
-# Change your path
-#os.chdir('/Users/siyang/Downloads/DS1003_Final_Project-master/')
-#sys.path.append('/Users/siyang/Downloads/DS1003_Final_Project-master/')
-
-# Codes starts here
-
-# Import the necessary modules and libraries
 import util
 from util import regression_loss
 from sklearn.model_selection import GridSearchCV
@@ -26,19 +17,18 @@ import pickle
 
 def run_model(read_data_datapath, save_model_path):
     # read data
-    x_cv, x_test, y_cv, y_test = util.prepare_train_test_set(read_data_datapath)
+    x_cv, x_test, y_cv, y_test = util.prepare_train_test_set(read_data_datapath, 0.01)
     # choose model
     clf = Pipeline([('clf',RandomForestRegressor(criterion='mse',random_state=0))])
     # grid search for the best fit parameters
     parameters = {
-        'clf__n_estimators': [250], #number of trees
-        'clf__max_depth': (125,75,50),
-        'clf__min_samples_split': (2, 3, 5),
-        'clf__min_samples_leaf': (1, 3, 5),
-        'clf__min_impurity_split': (1e-8, 1e-7, 1e-6)
+        'clf__n_estimators': [25, 50, 100, 150, 200],#number of trees
+        'clf__max_depth': [25, 50, 75, 100],
+        'clf__min_samples_split': [2, 4, 6],
+        'clf__min_impurity_split': [1e-8, 1e-7, 1e-6]
     }
         
-    CV_clf = GridSearchCV(estimator=clf, param_grid = parameters, cv=2, scoring='neg_mean_squared_error')
+    CV_clf = GridSearchCV(estimator=clf, param_grid = parameters, cv=3, scoring='neg_mean_squared_error')
     
     CV_clf.fit(x_cv, y_cv)
     #CV_clf.fit(x_cv[1:100,:], y_cv[1:100])
@@ -63,14 +53,11 @@ def show_result(read_model_path):
     
         
 if __name__ == '__main__':
-    run_model('./data/encoded_entire.pkl', "./model/forest_entire_model.pkl")
-    run_model('./data/encoded_others.pkl', "./model/forest_others_model.pkl")
+    run_model('./data/encoded_entire.pkl', "./model/forest_entire_model_0.01.pkl")
+    run_model('./data/encoded_private.pkl', "./model/forest_private_model_0.01.pkl")
 
-    show_result("./model/forest_entire_model.pkl")
-    show_result("./model/forest_others_model.pkl")
-
-
-
+    show_result("./model/forest_entire_model_0.01.pkl")
+    show_result("./model/forest_private_model_0.01.pkl")
 
 
 # Feature importances
@@ -96,7 +83,6 @@ if __name__ == '__main__':
 #plt.xticks(range(x_train.shape[1]), indices)
 #plt.xlim([-1, x_train.shape[1]])
 #plt.show()
-
 
 # Visualization 
 #import pydot  
